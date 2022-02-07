@@ -1,0 +1,91 @@
+﻿@model List<AppUser>
+@{
+    ViewData["Title"] = "Chat";
+}
+
+<h1>Chat</h1>
+<div class="container">
+    <div class="row">
+        <div class="col-md-8">
+            <div class="container">
+
+                <div class="row">&nbsp;</div>
+                <div class="row">
+                    <div class="col-2">User</div>
+                    <div class="col-4"><input type="text" id="userInput" /></div>
+                </div>
+                <div class="row">
+                    <div class="col-2">Message</div>
+                    <div class="col-4"><input type="text" id="messageInput" /></div>
+                </div>
+                <div class="row">&nbsp;</div>
+                <div class="row">
+                    <div class="col-6">
+                        <input type="button" id="sendButton" value="Send Message" />
+                    </div>
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-12">
+                    <hr />
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-6">
+                    <ul id="messagesList"></ul>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <ul class="list-group">
+                @foreach (var user in Model)
+                {
+                <li id="@user.Id" class="list-group-item"> <span class="@(user.ConnectionId==null?"bg-offline":"bg-online")" style="width:10px;height:10px;border-radius:50%;display:inline-block"></span> <a asp-action="ShowToaster" asp-route-id="@user.Id   ">Show</a> @user.FullName</li>
+                }
+            </ul>
+        </div>
+    </div>
+</div>
+
+
+@section Scripts{ 
+    <script src="~/lib/microsoft/signalr/dist/browser/signalr.min.js"></script>
+    <script>
+        var connection = new signalR.HubConnectionBuilder().withUrl("/chatHub").build();
+
+        connection.start();
+
+        console.log(connection)
+
+        $("#sendButton").click(function () {
+            let name = $("#userInput").val();
+            let message = $("#messageInput").val();
+
+            connection.invoke("SendMessage", name, message);
+        })
+
+        connection.on("ReceiveMessage", function (name, message,date) {
+            console.log(`${name}: ${message}  - ${date}`)
+        })
+
+        connection.on("UserConnected", function (id) {
+            let elem = document.getElementById(id);
+
+            $(elem).find("span").removeClass("bg-offline");
+            $(elem).find("span").addClass("bg-online");
+
+        })
+
+        connection.on("UserDisConnected", function (id) {
+            let elem = document.getElementById(id);
+
+            $(elem).find("span").removeClass("bg-online");
+            $(elem).find("span").addClass("bg-offline");
+
+        })
+
+        connection.on("ShowToaster", function () {
+            alert("Your order accepted!")
+        })
+    </script>
+}
